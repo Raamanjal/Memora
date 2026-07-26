@@ -5,6 +5,7 @@ import { TwitterIcon } from "../icons/TwitterIcon";
 import { YoutubeIcon } from "../icons/YoutubeIcon";
 import { PdfIcon } from "../icons/PdfIcon";
 import { ArticleIcon } from "../icons/ArticleIcon";
+import { AudioIcon } from "../icons/AudioIcon";
 
 export type ContentType = "tweet" | "video" | "image" | "article" | "audio" | "pdf";
 
@@ -29,6 +30,7 @@ function ContentTypeIcon({ type }: { type: ContentType }) {
   if (type === "tweet") return <TwitterIcon className={className} />;
   if (type === "pdf") return <PdfIcon className={className} />;
   if (type === "article") return <ArticleIcon className={className} />;
+  if (type === "audio") return <AudioIcon className={className} />;
   return <ImageIcon className={className} />;
 }
 

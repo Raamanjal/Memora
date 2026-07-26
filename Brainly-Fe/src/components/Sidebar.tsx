@@ -5,6 +5,7 @@ import { SidebarItem } from "./SidebarItem";
 import { ImageIcon } from "../icons/ImageIcon";
 import { PdfIcon } from "../icons/PdfIcon";
 import { ArticleIcon } from "../icons/ArticleIcon";
+import { AudioIcon } from "../icons/AudioIcon";
 import type { ContentType } from "./Card";
 
 export function Sidebar({ selectedType, onSelectType }: { selectedType: ContentType | null; onSelectType: (type: ContentType) => void }) {
@@ -21,6 +22,7 @@ export function Sidebar({ selectedType, onSelectType }: { selectedType: ContentT
             <SidebarItem text="Images" icon={<ImageIcon />} active={selectedType === "image"} onClick={() => onSelectType("image")} />
             <SidebarItem text="Articles" icon={<ArticleIcon />} active={selectedType === "article"} onClick={() => onSelectType("article")} />
             <SidebarItem text="PDFs" icon={<PdfIcon />} active={selectedType === "pdf"} onClick={() => onSelectType("pdf")} />
+            <SidebarItem text="Audios" icon={<AudioIcon />} active={selectedType === "audio"} onClick={() => onSelectType("audio")} />
         </nav>
     </aside>
 }

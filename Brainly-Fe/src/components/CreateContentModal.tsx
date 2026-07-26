@@ -10,6 +10,7 @@ enum ContentType {
   Image = "image",
   Article = "article",
   Pdf = "pdf",
+  Audio = "audio",
 }
 
 const contentTypes = [
@@ -18,6 +19,7 @@ const contentTypes = [
   { value: ContentType.Image, label: "Image" },
   { value: ContentType.Article, label: "Article" },
   { value: ContentType.Pdf, label: "PDF" },
+  { value: ContentType.Audio, label: "Audio" },
 ];
 
 export function CreateContentModal({ open, onClose }: { open: boolean; onClose: () => void }) {

@@ -6,6 +6,7 @@ export declare const createContentSchema: z.ZodObject<{
         image: "image";
         video: "video";
         article: "article";
+        audio: "audio";
         tweet: "tweet";
         pdf: "pdf";
     }>;

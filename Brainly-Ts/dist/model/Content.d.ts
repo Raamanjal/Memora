@@ -3,25 +3,25 @@ import "./Tag.js";
 export declare const content: import("mongoose").Model<{
     type: string;
     link: string;
+    userId: Types.ObjectId;
     title: string;
     tags: Types.ObjectId[];
-    userid: Types.ObjectId;
 }, {}, {}, {
     id: string;
 }, import("mongoose").Document<unknown, {}, {
     type: string;
     link: string;
+    userId: Types.ObjectId;
     title: string;
     tags: Types.ObjectId[];
-    userid: Types.ObjectId;
 }, {
     id: string;
 }, import("mongoose").DefaultSchemaOptions> & Omit<{
     type: string;
     link: string;
+    userId: Types.ObjectId;
     title: string;
     tags: Types.ObjectId[];
-    userid: Types.ObjectId;
 } & {
     _id: Types.ObjectId;
 } & {
@@ -31,23 +31,23 @@ export declare const content: import("mongoose").Model<{
 }, Schema<any, import("mongoose").Model<any, any, any, any, any, any, any>, {}, {}, {}, {}, import("mongoose").DefaultSchemaOptions, {
     type: string;
     link: string;
+    userId: Types.ObjectId;
     title: string;
     tags: Types.ObjectId[];
-    userid: Types.ObjectId;
 }, import("mongoose").Document<unknown, {}, {
     type: string;
     link: string;
+    userId: Types.ObjectId;
     title: string;
     tags: Types.ObjectId[];
-    userid: Types.ObjectId;
 }, {
     id: string;
 }, import("mongoose").DefaultSchemaOptions> & Omit<{
     type: string;
     link: string;
+    userId: Types.ObjectId;
     title: string;
     tags: Types.ObjectId[];
-    userid: Types.ObjectId;
 } & {
     _id: Types.ObjectId;
 } & {
@@ -57,9 +57,9 @@ export declare const content: import("mongoose").Model<{
 }, unknown, {
     type: string;
     link: string;
+    userId: Types.ObjectId;
     title: string;
     tags: Types.ObjectId[];
-    userid: Types.ObjectId;
 } & {
     _id: Types.ObjectId;
 } & {
@@ -67,9 +67,9 @@ export declare const content: import("mongoose").Model<{
 }>, {
     type: string;
     link: string;
+    userId: Types.ObjectId;
     title: string;
     tags: Types.ObjectId[];
-    userid: Types.ObjectId;
 } & {
     _id: Types.ObjectId;
 } & {

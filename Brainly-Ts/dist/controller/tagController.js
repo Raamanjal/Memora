@@ -5,14 +5,14 @@ function isValidTagId(tagId) {
     return Types.ObjectId.isValid(tagId);
 }
 export const createTag = async (req, res) => {
-    if (!req.userid)
+    if (!req.userId)
         return res.status(401).json({ message: "Unauthorized" });
     try {
         const title = req.body.title.trim();
-        const existingTag = await Tag.findOne({ userId: req.userid, title });
+        const existingTag = await Tag.findOne({ userId: req.userId, title });
         if (existingTag)
             return res.status(200).json({ tag: existingTag });
-        const tag = await Tag.create({ title, userId: req.userid });
+        const tag = await Tag.create({ title, userId: req.userId });
         return res.status(201).json({ tag });
     }
     catch (error) {
@@ -21,10 +21,10 @@ export const createTag = async (req, res) => {
     }
 };
 export const getTags = async (req, res) => {
-    if (!req.userid)
+    if (!req.userId)
         return res.status(401).json({ message: "Unauthorized" });
     try {
-        const tags = await Tag.find({ userId: req.userid }).sort({ title: 1 }).lean();
+        const tags = await Tag.find({ userId: req.userId }).sort({ title: 1 }).lean();
         return res.status(200).json({ tags });
     }
     catch (error) {
@@ -34,12 +34,12 @@ export const getTags = async (req, res) => {
 };
 export const updateTag = async (req, res) => {
     const { tagId } = req.params;
-    if (!req.userid)
+    if (!req.userId)
         return res.status(401).json({ message: "Unauthorized" });
     if (typeof tagId !== "string" || !isValidTagId(tagId))
         return res.status(400).json({ message: "Invalid tag id" });
     try {
-        const tag = await Tag.findOneAndUpdate({ _id: tagId, userId: req.userid }, { title: req.body.title.trim() }, { new: true, runValidators: true });
+        const tag = await Tag.findOneAndUpdate({ _id: tagId, userId: req.userId }, { title: req.body.title.trim() }, { new: true, runValidators: true });
         if (!tag)
             return res.status(404).json({ message: "Tag not found" });
         return res.status(200).json({ tag });
@@ -51,15 +51,15 @@ export const updateTag = async (req, res) => {
 };
 export const deleteTag = async (req, res) => {
     const { tagId } = req.params;
-    if (!req.userid)
+    if (!req.userId)
         return res.status(401).json({ message: "Unauthorized" });
     if (typeof tagId !== "string" || !isValidTagId(tagId))
         return res.status(400).json({ message: "Invalid tag id" });
     try {
-        const tag = await Tag.findOneAndDelete({ _id: tagId, userId: req.userid });
+        const tag = await Tag.findOneAndDelete({ _id: tagId, userId: req.userId });
         if (!tag)
             return res.status(404).json({ message: "Tag not found" });
-        await content.updateMany({ userid: req.userid }, { $pull: { tags: tag._id } });
+        await content.updateMany({ userId: req.userId }, { $pull: { tags: tag._id } });
         return res.status(200).json({ message: "Tag deleted successfully" });
     }
     catch (error) {

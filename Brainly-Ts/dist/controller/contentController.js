@@ -4,13 +4,13 @@ import { Tag } from "../model/Tag.js";
 export const createContent = async (req, res) => {
     try {
         const { link, title, type, tags = [] } = req.body;
-        if (!req.userid) {
+        if (!req.userId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
         const uniqueTagIds = [...new Set(tags)];
         const ownedTagCount = await Tag.countDocuments({
             _id: { $in: uniqueTagIds },
-            userId: req.userid,
+            userId: req.userId,
         });
         if (ownedTagCount !== uniqueTagIds.length) {
             return res.status(400).json({ message: "One or more tags are invalid" });
@@ -19,7 +19,7 @@ export const createContent = async (req, res) => {
             link,
             title,
             type,
-            userid: req.userid,
+            userId: req.userId,
             tags: uniqueTagIds.map((tag) => new Types.ObjectId(tag)),
         });
         return res.status(201).json({
@@ -34,12 +34,12 @@ export const createContent = async (req, res) => {
 };
 export const getContent = async (req, res) => {
     try {
-        const userId = req.userid;
+        const userId = req.userId;
         if (!userId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
         const userContent = await content
-            .find({ userid: userId })
+            .find({ userId })
             .populate("tags", "title")
             .lean()
             .exec();
@@ -53,7 +53,7 @@ export const getContent = async (req, res) => {
 export const deleteContent = async (req, res) => {
     try {
         const { contentId } = req.params;
-        const userId = req.userid;
+        const userId = req.userId;
         if (!userId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
@@ -62,7 +62,7 @@ export const deleteContent = async (req, res) => {
         }
         const deletedContent = await content.findOneAndDelete({
             _id: contentId,
-            userid: userId,
+            userId: userId,
         });
         if (!deletedContent) {
             return res.status(404).json({ message: "Content not found" });

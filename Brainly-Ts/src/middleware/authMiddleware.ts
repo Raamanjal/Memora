@@ -1,6 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt, { type JwtPayload } from "jsonwebtoken";
-import ts from "typescript";
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
 
@@ -11,18 +10,23 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     }
 
     const token = header.split(" ")[1];
+    try{
     //  @ts-ignore
+    
     const decoded = jwt.verify(token,process.env.JWT_SECRET as string);
     if(decoded){
     if(typeof decoded==='string'){
         res.status(401).json({message:"Not logged In"});
         return;
     }
-    req.userid=(decoded as JwtPayload).userId;
+    req.userId=(decoded as JwtPayload).userId;
     next();
     }
     else{
         res.status(403).json({message:"Not logged In"});
+    }
+    } catch(err){
+        res.status(403).json({message:"Expired or Invalid Token"});
     }
 
 }

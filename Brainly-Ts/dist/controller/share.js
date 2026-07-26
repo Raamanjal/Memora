@@ -3,7 +3,7 @@ import { random } from "../utils/random.js";
 import { content } from "../model/Content.js";
 import { UserModel } from "../model/User.js";
 export const shareContent = async (req, res) => {
-    const userId = req.userid;
+    const userId = req.userId;
     if (!userId) {
         res.status(401).json({
             message: "Unauthorized"
@@ -65,7 +65,7 @@ export const getSharedContent = async (req, res) => {
             return;
         }
         const userContent = await content.find({
-            userid: link.userId
+            userId: link.userId
         }).populate("tags", "title");
         const user = await UserModel.findOne({
             _id: link.userId
@@ -79,6 +79,28 @@ export const getSharedContent = async (req, res) => {
         res.json({
             username: user.username,
             content: userContent
+        });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "Something went wrong"
+        });
+    }
+};
+export const getShareStatus = async (req, res) => {
+    const userId = req.userId;
+    if (!userId) {
+        res.status(401).json({
+            message: "Unauthorized"
+        });
+        return;
+    }
+    try {
+        const link = await LinkModel.findOne({ userId });
+        res.json({
+            shared: !!link,
+            hash: link ? link.hash : null
         });
     }
     catch (error) {

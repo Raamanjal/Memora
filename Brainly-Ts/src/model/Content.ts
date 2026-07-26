@@ -8,7 +8,7 @@ const contentSchema = new Schema({
   type: { type: String, enum: contentTypes, required: true },
   title: { type: String, required: true },
   tags: [{ type: Types.ObjectId, ref: 'Tag' }],
-  userid: { type: Types.ObjectId, ref: 'User', required: true },
+  userId: { type: Types.ObjectId, ref: 'User', required: true },
 });
 
 export const content= model("Content",contentSchema) ;

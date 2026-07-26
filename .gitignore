@@ -1,1 +1,34 @@
+# Dependencies
+node_modules/
+
+# Production/Build outputs
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Env / Secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# IDE/System files
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Agent/AI tools
 .agents/

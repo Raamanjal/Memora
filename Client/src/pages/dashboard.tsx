@@ -11,6 +11,7 @@ import axios from "axios"
 import { useNavigate } from "react-router-dom"
 import { LogoutIcon } from "../icons/LogoutIcon"
 import { ShareBrainModal } from "../components/ShareBrainModal"
+import { AiChatPanel } from "../components/AiChatPanel"
 
 export function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -73,6 +74,8 @@ export function Dashboard() {
           </button>
         </div>
       </header>
+
+      <AiChatPanel onSave={refresh} />
 
       <div className="columns-1 gap-5 sm:columns-2 xl:columns-3 2xl:columns-4">
         {filteredContents.map(({_id, type, link, title, tags}: { _id: string; type: ContentType; link: string; title: string; tags: Tag[] }) => <div key={_id} className="mb-5 break-inside-avoid"><Card

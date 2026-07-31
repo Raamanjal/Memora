@@ -7,6 +7,7 @@ import authRouter from "./routes/authRouter.js";
 import contentRouter from "./routes/contentRouter.js";
 import shareRouter from "./routes/shareRouter.js";
 import tagRouter from "./routes/tagRouter.js";
+import aiRouter from "./routes/aiRouter.js";
 import { dbConnect } from "./utils/db.js";
 
 const app = express();
@@ -19,8 +20,7 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/content", contentRouter);
 app.use("/api/v1/brain", shareRouter);
 app.use("/api/v1/tags", tagRouter);
-
-
+app.use("/api/v1/ai", aiRouter);
 dbConnect().then(() => {
   app.listen(PORT, () => {
     console.log(`Server started on PORT: ${PORT}`)

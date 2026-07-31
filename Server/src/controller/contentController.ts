@@ -96,11 +96,3 @@ export const deleteContent = async (req: Request, res: Response) => {
   }
 };
 
-export const detect = async (req: Request, res: Response) => {
-  try {
-    const { link } = req.body;
-
-  } catch (error) {
-
-  }
-}

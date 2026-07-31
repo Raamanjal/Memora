@@ -32,3 +32,7 @@ lerna-debug.log*
 
 # Agent/AI tools
 .agents/
+
+# Notes
+todo.md
+temp.md

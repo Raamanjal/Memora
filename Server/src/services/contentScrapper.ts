@@ -117,20 +117,37 @@ export async function scrapePdf(url: string): Promise<string> {
  * Extracts the transcript from a YouTube video.
  */
 export async function scrapeYoutubeVideo(url: string): Promise<string> {
+    let text = "";
+
+    // 1. Try to fetch the title from the YouTube page HTML
+    try {
+        const response = await fetch(url);
+        const html = await response.text();
+        const $ = cheerio.load(html);
+        const pageTitle = $('title').text().replace('- YouTube', '').trim();
+        if (pageTitle) {
+            text += `# ${pageTitle}\n\n`;
+        }
+    } catch (e) {
+        console.error("Could not fetch YouTube title", e);
+    }
+
+    // 2. Try to fetch transcript
     try {
         const transcriptItems = await YoutubeTranscript.fetchTranscript(url);
-
-        // Combine transcript pieces into a clean, flowing text string
-        let text = transcriptItems.map(item => item.text.replace(/\n/g, ' ')).join(' ');
-
-        // Final whitespace cleanup
-        text = text.replace(/\s{2,}/g, ' ').trim();
-
-        return text;
+        const transcriptText = transcriptItems.map(item => item.text.replace(/\n/g, ' ')).join(' ');
+        text += transcriptText;
     } catch (error) {
-        console.error(`Error scraping YouTube video (${url}):`, error);
-        throw new Error("Failed to extract transcript from the YouTube video. (Note: The video must have captions enabled)");
+        console.error(`Error scraping YouTube transcript (${url}):`, error);
+        if (!text.trim()) {
+            throw new Error("Failed to extract transcript and title from the YouTube video.");
+        }
+        text += "> (No transcript available for this video)";
     }
+
+    // Final whitespace cleanup
+    text = text.replace(/\s{2,}/g, ' ').trim();
+    return text;
 }
 
 /**

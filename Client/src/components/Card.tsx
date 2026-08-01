@@ -88,6 +88,8 @@ export function Card({ contentId, title, link, type, tags = [], onDelete, readOn
 
   const googleDriveFileId = type === "pdf" ? getGoogleDriveFileId(link) : undefined;
   const driveThumbnailUrl = googleDriveFileId ? `https://drive.google.com/thumbnail?id=${googleDriveFileId}&sz=w1000` : undefined;
+  const cloudinaryThumbnailUrl = type === "pdf" && link.includes("cloudinary.com") ? link.replace(/\.pdf$/i, ".jpg") : undefined;
+  const pdfThumbnailUrl = driveThumbnailUrl || cloudinaryThumbnailUrl;
   const website = type === "article" ? getWebsiteDetails(link) : undefined;
 
   return <article className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
@@ -104,7 +106,7 @@ export function Card({ contentId, title, link, type, tags = [], onDelete, readOn
       {type === "tweet" && <blockquote className="twitter-tweet"><a href={link.replace("x.com", "twitter.com")}></a></blockquote>}
       {type === "image" && <div role="link" tabIndex={0} onClick={handleClick} onKeyDown={handlePreviewKeyDown} className="cursor-pointer overflow-hidden rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"><img className="aspect-video w-full object-cover transition duration-200 hover:scale-[1.02]" src={link} alt={title} /></div>}
       {type === "pdf" && <div role="link" tabIndex={0} onClick={handleClick} onKeyDown={handlePreviewKeyDown} className="group relative block aspect-[4/3] cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500" aria-label={`Open ${title}`}>
-        {driveThumbnailUrl ? <img className="size-full object-cover transition duration-200 group-hover:scale-[1.02]" src={driveThumbnailUrl} alt={`First page of ${title}`} /> : <iframe className="pointer-events-none size-full border-0" src={`${getPdfPreviewUrl(link)}#page=1&zoom=page-width`} title={`${title} first page preview`} />}
+        {pdfThumbnailUrl ? <img className="size-full object-cover transition duration-200 group-hover:scale-[1.02]" src={pdfThumbnailUrl} alt={`First page of ${title}`} /> : <iframe className="pointer-events-none size-full border-0" src={`${getPdfPreviewUrl(link)}#page=1&zoom=page-width`} title={`${title} first page preview`} />}
         <span className="absolute inset-x-0 bottom-0 bg-slate-950/70 px-3 py-2 text-xs font-medium text-white">Open PDF -&gt;</span>
       </div>}
       {type === "article" && <div role="link" tabIndex={0} onClick={handleClick} onKeyDown={handlePreviewKeyDown} className="group relative cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-4 focus:outline-none focus:ring-2 focus:ring-violet-500" aria-label={`Open ${title}`}>

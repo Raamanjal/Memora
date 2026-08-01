@@ -1,6 +1,5 @@
 import * as cheerio from 'cheerio';
-import * as _pdfParse from 'pdf-parse';
-const pdfParse = (_pdfParse as any).default || _pdfParse;
+import { PDFParse } from 'pdf-parse';
 import { YoutubeTranscript } from 'youtube-transcript';
 
 
@@ -86,7 +85,27 @@ export async function scrapeWebPage(url: string): Promise<string> {
  */
 export async function scrapePdf(url: string): Promise<string> {
     try {
-        const response = await fetch(url);
+        let downloadUrl = url;
+
+        // Convert Google Drive view/sharing links into direct binary download links
+        if (url.includes("drive.google.com")) {
+            let fileId = "";
+            const matchFile = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (matchFile && matchFile[1]) {
+                fileId = matchFile[1];
+            } else {
+                const matchId = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (matchId && matchId[1]) {
+                    fileId = matchId[1];
+                }
+            }
+
+            if (fileId) {
+                downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+            }
+        }
+
+        const response = await fetch(downloadUrl);
         if (!response.ok) {
             throw new Error(`Failed to fetch PDF: ${response.status} ${response.statusText}`);
         }
@@ -95,8 +114,10 @@ export async function scrapePdf(url: string): Promise<string> {
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        const pdfData = await pdfParse(buffer);
-        let text = pdfData.text;
+        const parser = new PDFParse({ data: buffer });
+        const pdfData = await parser.getText();
+        let text = pdfData.text || "";
+        await parser.destroy();
 
         // PDF text cleanup: PDFs often have broken words across lines (e.g. "hyphen-\nation")
         // and excessive whitespace. This cleans it up for better chunks.

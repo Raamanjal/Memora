@@ -32,6 +32,9 @@ export function CreateContentModal({ open, onClose }: { open: boolean; onClose: 
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [newTagName, setNewTagName] = useState("");
 
+  const [uploadedPdfFile, setUploadedPdfFile] = useState<File | null>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (!open) return;
 
@@ -48,21 +51,42 @@ export function CreateContentModal({ open, onClose }: { open: boolean; onClose: 
     const title = titleRef.current?.value.trim() ?? "";
     const link = linkRef.current?.value.trim() ?? "";
 
-    if (!title || !link) {
-      setError("Please add both a title and a link.");
-      return;
+    if (type === ContentType.Pdf && uploadedPdfFile) {
+      if (!title) {
+        setError("Please enter a title for the PDF.");
+        return;
+      }
+    } else {
+      if (!title || !link) {
+        setError("Please add both a title and a link.");
+        return;
+      }
     }
 
     setIsSubmitting(true);
     setError("");
 
     try {
-      await axios.post(`${BACKEND_URL}/api/v1/content`, { link, title, type, tags: selectedTagIds }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      if (type === ContentType.Pdf && uploadedPdfFile) {
+        const formData = new FormData();
+        formData.append("pdf", uploadedPdfFile);
+        formData.append("title", title);
+        formData.append("tags", JSON.stringify(selectedTagIds));
+
+        await axios.post(`${BACKEND_URL}/api/v1/content/upload-pdf`, formData, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      } else {
+        await axios.post(`${BACKEND_URL}/api/v1/content`, { link, title, type, tags: selectedTagIds }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+      }
       onClose();
-    } catch {
-      setError("Unable to add content. Check the link and try again.");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Unable to add content. Check details and try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -105,7 +129,7 @@ export function CreateContentModal({ open, onClose }: { open: boolean; onClose: 
           <div>
             <p className="text-sm font-medium text-violet-700">Second Brain</p>
             <h2 id="add-content-title" className="mt-1 text-xl font-semibold tracking-tight text-slate-900">Add content</h2>
-            <p className="mt-1 text-sm text-slate-500">Save a useful link to revisit later.</p>
+            <p className="mt-1 text-sm text-slate-500">Save a useful link or document to revisit later.</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close add content dialog" className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">
             <CrossIcon />
@@ -117,10 +141,44 @@ export function CreateContentModal({ open, onClose }: { open: boolean; onClose: 
             <span className="text-sm font-medium text-slate-700">Title</span>
             <input ref={titleRef} placeholder="e.g. Learn TypeScript" className="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100" />
           </label>
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700">Link</span>
-            <input ref={linkRef} type="url" placeholder="https://..." className="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100" />
-          </label>
+
+          {type === ContentType.Pdf ? (
+            <div>
+              <span className="block text-sm font-medium text-slate-700 mb-1.5">PDF Document</span>
+              <div className="space-y-2">
+                <input
+                  ref={pdfInputRef}
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setUploadedPdfFile(file);
+                    if (file && titleRef.current && !titleRef.current.value) {
+                      titleRef.current.value = file.name.replace(/\.pdf$/i, "");
+                    }
+                  }}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+                />
+                <div className="relative flex py-1 items-center">
+                  <div className="flex-grow border-t border-slate-200"></div>
+                  <span className="flex-shrink mx-2 text-xs text-slate-400">or paste a link</span>
+                  <div className="flex-grow border-t border-slate-200"></div>
+                </div>
+                <input
+                  ref={linkRef}
+                  type="url"
+                  disabled={Boolean(uploadedPdfFile)}
+                  placeholder="https://drive.google.com/... or public PDF link"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100 disabled:opacity-60"
+                />
+              </div>
+            </div>
+          ) : (
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">Link</span>
+              <input ref={linkRef} type="url" placeholder="https://..." className="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100" />
+            </label>
+          )}
 
           <fieldset>
             <legend className="text-sm font-medium text-slate-700">Content type</legend>
@@ -129,7 +187,11 @@ export function CreateContentModal({ open, onClose }: { open: boolean; onClose: 
                 key={contentType.value}
                 type="button"
                 aria-pressed={type === contentType.value}
-                onClick={() => setType(contentType.value)}
+                onClick={() => {
+                  setType(contentType.value);
+                  setUploadedPdfFile(null);
+                  if (pdfInputRef.current) pdfInputRef.current.value = "";
+                }}
                 className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${type === contentType.value ? "border-violet-600 bg-violet-600 text-white shadow-sm" : "border-violet-100 bg-violet-50 text-violet-700 hover:bg-violet-100"}`}
               >
                 {contentType.label}

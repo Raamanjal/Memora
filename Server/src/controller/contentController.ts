@@ -3,7 +3,7 @@ import { Types } from "mongoose";
 import { content } from "../model/Content.js";
 import { Tag } from "../model/Tag.js";
 import { uploadPdfToCloudinary } from "../services/cloudinaryService.js";
-import { processContent } from "../services/embeddingService.js";
+import { processContent, deleteContentEmbeddings } from "../services/embeddingService.js";
 
 interface ContentBody {
   link: string;
@@ -160,7 +160,9 @@ export const deleteContent = async (req: Request, res: Response) => {
     if (!deletedContent) {
       return res.status(404).json({ message: "Content not found" });
     }
-
+    // Delete associated embeddings
+    await deleteContentEmbeddings(deletedContent._id.toString());
+    
     return res.status(200).json({
       message: "Content deleted successfully",
     });

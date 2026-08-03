@@ -183,3 +183,16 @@ ${truncated}`,
     return "Summary could not be generated.";
   }
 }
+
+
+export async function generateEmbedding(text:string): Promise<number[]> {
+  const response = await ai.models.embedContent({
+    model: EMBEDDING_MODEL,
+    contents: text,
+  })
+   const embedding = response.embeddings?.[0]?.values;
+   if(!embedding || embedding.length !== 768){
+    throw new Error("Embedding generation failed or returned unexpected length.");
+   }
+   return embedding;
+}

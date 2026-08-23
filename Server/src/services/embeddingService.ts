@@ -5,6 +5,7 @@ import type { ContentType } from "./aiDetector.js"
 import { Embedding } from "../model/Embeddings.js";
 import { chunkWithOverlap } from "./textChunker.js";
 import { generateEmbedding } from "./aiDetector.js";
+import { Types } from "mongoose";
 
 
 /**
@@ -98,4 +99,37 @@ export async function indexContent(contentId: string, userId: string, rawText: s
 export async function deleteContentEmbeddings(contentId: string) {
   const result = await Embedding.deleteMany({ contentId });
   return result.deletedCount;
+}
+
+
+export async function semanticSearch(query: string, userId: string, topK=5) {
+  const queryVector = await generateEmbedding(query);
+  // selects the top K most similar embeddings for the given userId
+  const safeTopK = Math.min(Math.max(topK, 1), 20);
+
+  return Embedding.aggregate([
+    {
+      $vectorSearch:{
+        index:"vector_index",
+        path:"vector",
+        queryVector:queryVector,
+        numCandidates: safeTopK * 20,
+        limit:safeTopK,
+        filter:{
+          userId: new Types.ObjectId(userId),
+        },
+      },
+    },
+    {
+      $project:{
+        _id:0,
+        contentId:1,
+        chunkText:1,
+        chunkIndex:1,
+        score:{
+          $meta:"vectorSearchScore"
+        },
+      },
+    },
+  ]);
 }

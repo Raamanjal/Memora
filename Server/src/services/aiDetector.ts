@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_KEY! });
 
 const GENERATIVE_MODEL = "gemini-3.1-flash-lite";    // Using Pro to bypass daily limits and 404 errors
-const EMBEDDING_MODEL = "text-embedding-004";   // For converting text → vectors (768 numbers)
+const EMBEDDING_MODEL = "gemini-embedding-001";   // For converting text → vectors (768 numbers)
 
 //TYPES
 export type ContentType = "image" | "video" | "article" | "audio" | "tweet" | "pdf";
@@ -189,10 +189,119 @@ export async function generateEmbedding(text:string): Promise<number[]> {
   const response = await ai.models.embedContent({
     model: EMBEDDING_MODEL,
     contents: text,
+    config: {
+    outputDimensionality: 768,
+  },
   })
    const embedding = response.embeddings?.[0]?.values;
    if(!embedding || embedding.length !== 768){
     throw new Error("Embedding generation failed or returned unexpected length.");
    }
    return embedding;
+}
+
+export interface RetrievedChunk {
+  contentId: string;
+  chunkText: string;
+  chunkIndex: number;
+  score?: number | undefined;
+}
+
+export interface ChatMessage {
+  role: "user" | "model";
+  text: string;
+}
+
+/**
+ * ─── Context-Aware Query Rewriting & Expansion ────────────────────────────────
+ * Transforms conversational user questions into dense, keyword-rich queries
+ * optimized for vector search, taking previous conversation turns into account.
+ */
+export async function rewriteQuery(userQuery: string, history: ChatMessage[] = []): Promise<string> {
+  if (!userQuery || userQuery.trim().length === 0) return userQuery;
+
+  // Format recent chat history if available
+  const recentHistory = history
+    .slice(-4)
+    .map((msg) => `${msg.role === "user" ? "User" : "AI Assistant"}: ${msg.text.slice(0, 250)}`)
+    .join("\n");
+
+  try {
+    const response = await ai.models.generateContent({
+      model: GENERATIVE_MODEL,
+      contents: `You are an expert AI search optimizer for a personal knowledge assistant.
+Given the conversation history and a user's latest follow-up question, rewrite it into a single, clear search query optimized for semantic vector search in their personal library.
+
+Rules:
+- Replace ambiguous pronouns ("it", "that", "this", "they", "the previous tool") with the specific subject discussed in the conversation history.
+- Remove conversational filler (e.g. "tell me more about", "can you check if", "show notes on").
+- Include relevant technical keywords and synonyms.
+- Keep it concise (maximum 15 words).
+- Output ONLY the rewritten search query with NO extra commentary or quotation marks.
+
+Conversation History:
+${recentHistory || "No previous history."}
+
+User's Question: "${userQuery}"
+Optimized Query:`,
+    });
+
+    const rewritten = response.text?.trim().replace(/^["']|["']$/g, "");
+    if (rewritten && rewritten.length > 2) {
+      return rewritten;
+    }
+    return userQuery;
+  } catch (error) {
+    console.error("Query rewriting failed, falling back to original:", error);
+    return userQuery;
+  }
+}
+
+/**
+ * ─── Conversational Answer Generation ─────────────────────────────────────────
+ * Generates an articulate, structured, and comprehensive answer using Markdown
+ * with clean inline source citations [1], [2] while maintaining conversational continuity.
+ */
+export async function generateAnswer(
+  query: string,
+  chunks: RetrievedChunk[],
+  history: ChatMessage[] = []
+): Promise<string> {
+  const context = chunks
+    .map((chunk, index) => `--- [Source ${index + 1}] ---\n${chunk.chunkText}`)
+    .join("\n\n");
+
+  const conversationHistory = history
+    .slice(-6)
+    .map((msg) => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.text}`)
+    .join("\n\n");
+
+  const response = await ai.models.generateContent({
+    model: GENERATIVE_MODEL,
+    contents: `You are Memora AI, an intelligent, articulate personal knowledge assistant.
+
+Your task is to answer the user's question accurately and insightfully based on the retrieved context from their personal library, keeping the conversation history in mind.
+
+Instructions:
+1. **Structure & Formatting**:
+   - Use clear GitHub-flavored Markdown formatting.
+   - Use bold text (**concept**) for emphasis on important terms or takeaways.
+   - Use structured bullet lists (- ) or numbered steps (1. ) where appropriate.
+   - If providing code, use fenced code blocks with the exact language identifier (e.g. \`\`\`typescript ... \`\`\`).
+2. **Citations**:
+   - Cite relevant facts with simple brackets like [1] or [2] immediately following the cited statement or paragraph.
+   - Match the citation numbers directly to the provided Source numbers.
+3. **Conversational Continuity**:
+   - If the user is asking a follow-up to a previous topic, answer smoothly and refer back to previous context naturally.
+4. **Honesty**:
+   - If the provided context does not contain enough information to answer the question, state what is known from the context and clearly clarify what is missing.
+
+${conversationHistory ? `Conversation History:\n${conversationHistory}\n\n` : ""}Retrieved Context from Saved Library:
+${context}
+
+User Question:
+${query}`,
+  });
+
+  return response.text?.trim() ?? "I could not generate an answer based on your saved content.";
 }

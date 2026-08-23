@@ -1,13 +1,19 @@
 import type { Request, Response } from "express";
-import { parseUserIntent, detectContentType } from "../services/aiDetector.js";
-import { processContent } from "../services/embeddingService.js";
+import { 
+  parseUserIntent, 
+  detectContentType, 
+  generateAnswer, 
+  rewriteQuery, 
+  type RetrievedChunk 
+} from "../services/aiDetector.js";
+import { processContent, semanticSearch } from "../services/embeddingService.js";
 import { content } from "../model/Content.js";
 import { Tag } from "../model/Tag.js";
 import { Types } from "mongoose";
 
 export async function chat(req: Request, res: Response) {
   try {
-    const { message } = req.body;
+    const { message, history = [] } = req.body;
     const userId = req.userId; // injected by auth middleware
 
     if (!userId) {
@@ -27,12 +33,12 @@ export async function chat(req: Request, res: Response) {
 
       // Fallbacks just in case the tool didn't return them
       let type = intent.type || await detectContentType(intent.url, intent.message);
-      
+
       // Hardcoded safety net to guarantee embeds work correctly
       if (intent.url.includes("youtube.com") || intent.url.includes("youtu.be")) {
-          type = "video";
+        type = "video";
       } else if (intent.url.includes("twitter.com") || intent.url.includes("x.com")) {
-          type = "tweet";
+        type = "tweet";
       }
 
       const title = intent.suggestedTitle || "Untitled Content";
@@ -44,8 +50,6 @@ export async function chat(req: Request, res: Response) {
           const lowerName = tagName.toLowerCase().trim();
           if (!lowerName) continue;
 
-          // Note: for robustness we might want to do a case-insensitive search, 
-          // but we're storing them lowercase.
           let tag = await Tag.findOne({ title: new RegExp(`^${lowerName}$`, 'i'), userId });
           if (!tag) {
             tag = await Tag.create({ title: lowerName, userId });
@@ -77,14 +81,53 @@ export async function chat(req: Request, res: Response) {
       });
 
     } else {
-      // User wants to ASK a question (RAG)
-      console.log(`[AI Chat] User is asking: ${intent.query}`);
+      // User wants to ASK a question (RAG with Contextual Query Rewriting)
+      console.log(`[AI Chat] Raw user query: "${intent.query}"`);
 
-      // TODO: RAG pipeline (embed query -> vector search -> generate answer)
+      // 1. Context-Aware Query Rewriting & Expansion
+      const optimizedQuery = await rewriteQuery(intent.query, history);
+      console.log(`[AI Chat] Optimized vector search query: "${optimizedQuery}"`);
+
+      // 2. Semantic Vector Search
+      let chunks: RetrievedChunk[] = await semanticSearch(optimizedQuery, userId, 5);
+      
+      // Fallback: If rewritten query returned no results, try original query
+      if (chunks.length === 0 && optimizedQuery !== intent.query) {
+        chunks = await semanticSearch(intent.query, userId, 5);
+      }
+
+      if (chunks.length === 0) {
+        return res.status(200).json({
+          message: "I couldn't find any relevant content in your library to answer this question.",
+          action: "ask",
+          sources: []
+        });
+      }
+
+      // 3. Fetch metadata for unique content IDs
+      const contentIds = Array.from(new Set(chunks.map((c: any) => c.contentId)));
+      const contentDocs = await content.find({ _id: { $in: contentIds } }).select("title link type");
+      const contentMap = new Map(contentDocs.map((doc) => [doc._id.toString(), doc]));
+
+      // 4. Generate structured answer with conversational history context
+      const answer = await generateAnswer(intent.query, chunks, history);
+
       return res.status(200).json({
-        message: "I detected a question, but the answering feature is not built yet! Let's build it next.",
         action: "ask",
-        query: intent.query
+        answer: answer,
+        sources: chunks.map((chunk: any, index: number) => {
+          const doc = contentMap.get(chunk.contentId.toString());
+          return {
+            number: index + 1,
+            contentId: chunk.contentId.toString(),
+            chunkIndex: chunk.chunkIndex,
+            title: doc?.title || `Source ${index + 1}`,
+            link: doc?.link || "",
+            type: doc?.type || "article",
+            score: chunk.score,
+            preview: chunk.chunkText.slice(0, 300),
+          };
+        }),
       });
     }
 

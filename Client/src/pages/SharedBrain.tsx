@@ -10,6 +10,8 @@ interface SharedContent {
   link: string;
   type: ContentType;
   tags: Tag[];
+  summary?: string;
+  isIndexed?: boolean;
 }
 
 export function SharedBrain() {
@@ -44,7 +46,7 @@ export function SharedBrain() {
       <p className="mt-2 text-sm text-slate-500">Read-only view · {contents.length} {contents.length === 1 ? "item" : "items"}</p>
     </header>
     <div className="columns-1 gap-5 sm:columns-2 xl:columns-3 2xl:columns-4">
-      {contents.map((content) => <div key={content._id} className="mb-5 break-inside-avoid"><Card contentId={content._id} title={content.title} link={content.link} type={content.type} tags={content.tags} readOnly /></div>)}
+      {contents.map((content) => <div key={content._id} className="mb-5 break-inside-avoid"><Card contentId={content._id} title={content.title} link={content.link} type={content.type} tags={content.tags} summary={content.summary} isIndexed={content.isIndexed} readOnly /></div>)}
     </div>
   </main>;
 }

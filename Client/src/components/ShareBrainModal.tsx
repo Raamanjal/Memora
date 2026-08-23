@@ -110,10 +110,10 @@ export function ShareBrainModal({ open, itemCount, onClose }: ShareBrainModalPro
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-labelledby="share-brain-title">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+      <div className="w-full max-w-md rounded-xl glass-card bg-white/90 p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <h2 id="share-brain-title" className="text-base font-semibold text-slate-900">
-            {status === "shared" ? "Your Second Brain is shared" : "Share Your Second Brain"}
+            {status === "shared" ? "Your Memora is shared" : "Share Your Memora"}
           </h2>
           <button type="button" onClick={onClose} aria-label="Close share dialog" className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             <CrossIcon />
@@ -136,7 +136,7 @@ export function ShareBrainModal({ open, itemCount, onClose }: ShareBrainModalPro
 
             <div className="flex gap-2">
               <input readOnly value={shareUrl} aria-label="Public share link" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none" onFocus={(event) => event.currentTarget.select()} />
-              <button type="button" onClick={handleCopy} className="rounded-lg border border-violet-200 px-3 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50 shrink-0">
+              <button type="button" onClick={handleCopy} className="rounded-lg border border-indigo-200 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50 shrink-0">
                 {copied ? "Copied" : "Copy"}
               </button>
             </div>
@@ -150,12 +150,12 @@ export function ShareBrainModal({ open, itemCount, onClose }: ShareBrainModalPro
               </button>
             </div>
 
-            <button type="button" onClick={onClose} className="w-full rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700">Done</button>
+            <button type="button" onClick={onClose} className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">Done</button>
           </div>
         ) : (
           <>
-            <p className="mt-5 text-sm leading-5 text-slate-600">Share your entire collection of notes, documents, tweets, and videos with others. They&apos;ll be able to view your content in their own Second Brain.</p>
-            <button type="button" onClick={shareBrain} disabled={status === "sharing"} className="mt-4 flex w-full items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-wait disabled:opacity-60">
+            <p className="mt-5 text-sm leading-5 text-slate-600">Share your entire collection of notes, documents, tweets, and videos with others. They&apos;ll be able to view your content in their own Memora.</p>
+            <button type="button" onClick={shareBrain} disabled={status === "sharing"} className="mt-4 flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60">
               <span className="mr-2"><ShareIcon /></span>
               {status === "sharing" ? "Creating link..." : "Share Brain"}
             </button>

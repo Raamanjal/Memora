@@ -6,6 +6,7 @@ import { YoutubeIcon } from "../icons/YoutubeIcon";
 import { PdfIcon } from "../icons/PdfIcon";
 import { ArticleIcon } from "../icons/ArticleIcon";
 import { AudioIcon } from "../icons/AudioIcon";
+import { SparklesIcon } from "../icons/SparklesIcon";
 
 export type ContentType = "tweet" | "video" | "image" | "article" | "audio" | "pdf";
 
@@ -20,6 +21,8 @@ interface CardProps {
   link: string;
   type: ContentType;
   tags?: Tag[];
+  summary?: string;
+  isIndexed?: boolean;
   onDelete?: (contentId: string) => Promise<void>;
   readOnly?: boolean;
 }
@@ -57,7 +60,7 @@ function getWebsiteDetails(link: string) {
   }
 }
 
-export function Card({ contentId, title, link, type, tags = [], onDelete, readOnly = false }: CardProps) {
+export function Card({ contentId, title, link, type, tags = [], summary, isIndexed = false, onDelete, readOnly = false }: CardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteError, setDeleteError] = useState(false);
@@ -88,36 +91,58 @@ export function Card({ contentId, title, link, type, tags = [], onDelete, readOn
 
   const googleDriveFileId = type === "pdf" ? getGoogleDriveFileId(link) : undefined;
   const driveThumbnailUrl = googleDriveFileId ? `https://drive.google.com/thumbnail?id=${googleDriveFileId}&sz=w1000` : undefined;
+  const cloudinaryThumbnailUrl = type === "pdf" && link.includes("cloudinary.com") ? link.replace(/\.pdf$/i, ".jpg") : undefined;
+  const pdfThumbnailUrl = driveThumbnailUrl || cloudinaryThumbnailUrl;
   const website = type === "article" ? getWebsiteDetails(link) : undefined;
 
-  return <article className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-    <div className="flex justify-between gap-3">
-      <div className="flex min-w-0 items-center text-sm font-medium text-slate-800">
-        <div className="shrink-0 pr-2 text-slate-500" aria-hidden="true"><ContentTypeIcon type={type} /></div>
-        <span className="truncate">{title}</span>
+  return <article className="flex min-w-0 flex-col overflow-hidden rounded-2xl glass-card p-5 group">
+    <div className="flex items-start justify-between gap-2">
+      <div className="flex min-w-0 items-center text-sm font-semibold text-slate-900">
+        <div className="shrink-0 pr-2.5 text-indigo-500" aria-hidden="true"><ContentTypeIcon type={type} /></div>
+        <span className="truncate" title={title}>{title}</span>
       </div>
-      {!readOnly && onDelete && <button type="button" onClick={() => setConfirmDelete(true)} aria-label={`Delete ${title}`} title="Delete content" className="shrink-0 rounded-md p-1 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"><DeleteIcon /></button>}
+      <div className="flex items-center gap-1.5 shrink-0 transition-opacity duration-200">
+        {isIndexed && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 text-[10px] font-semibold text-indigo-700" title="Vector embedded & searchable via AI">
+            <SparklesIcon className="size-2.5 text-indigo-500" />
+            AI Indexed
+          </span>
+        )}
+        {!readOnly && onDelete && <button type="button" onClick={() => setConfirmDelete(true)} aria-label={`Delete ${title}`} title="Delete content" className="shrink-0 rounded-lg p-1.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:text-red-600 focus:opacity-100"><DeleteIcon /></button>}
+      </div>
     </div>
 
     <div className="pt-4">
-      {type === "video" && <iframe className="aspect-video w-full rounded-lg" src={link.replace("watch", "embed").replace("?v=", "/")} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen />}
+      {type === "video" && <iframe className="aspect-video w-full rounded-xl shadow-sm" src={link.replace("watch", "embed").replace("?v=", "/")} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen />}
       {type === "tweet" && <blockquote className="twitter-tweet"><a href={link.replace("x.com", "twitter.com")}></a></blockquote>}
-      {type === "image" && <div role="link" tabIndex={0} onClick={handleClick} onKeyDown={handlePreviewKeyDown} className="cursor-pointer overflow-hidden rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"><img className="aspect-video w-full object-cover transition duration-200 hover:scale-[1.02]" src={link} alt={title} /></div>}
-      {type === "pdf" && <div role="link" tabIndex={0} onClick={handleClick} onKeyDown={handlePreviewKeyDown} className="group relative block aspect-[4/3] cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500" aria-label={`Open ${title}`}>
-        {driveThumbnailUrl ? <img className="size-full object-cover transition duration-200 group-hover:scale-[1.02]" src={driveThumbnailUrl} alt={`First page of ${title}`} /> : <iframe className="pointer-events-none size-full border-0" src={`${getPdfPreviewUrl(link)}#page=1&zoom=page-width`} title={`${title} first page preview`} />}
-        <span className="absolute inset-x-0 bottom-0 bg-slate-950/70 px-3 py-2 text-xs font-medium text-white">Open PDF -&gt;</span>
+      {type === "image" && <div role="link" tabIndex={0} onClick={handleClick} onKeyDown={handlePreviewKeyDown} className="cursor-pointer overflow-hidden rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"><img className="aspect-video w-full object-cover transition duration-300 hover:scale-[1.03]" src={link} alt={title} /></div>}
+      {type === "pdf" && <div role="link" tabIndex={0} onClick={handleClick} onKeyDown={handlePreviewKeyDown} className="group/pdf relative block aspect-[4/3] cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label={`Open ${title}`}>
+        {pdfThumbnailUrl ? <img className="size-full object-cover transition duration-300 group-hover/pdf:scale-[1.03]" src={pdfThumbnailUrl} alt={`First page of ${title}`} /> : <iframe className="pointer-events-none size-full border-0" src={`${getPdfPreviewUrl(link)}#page=1&zoom=page-width`} title={`${title} first page preview`} />}
+        <span className="absolute inset-x-0 bottom-0 bg-slate-900/80 px-3 py-2.5 text-xs font-medium text-white backdrop-blur">Open PDF -&gt;</span>
       </div>}
-      {type === "article" && <div role="link" tabIndex={0} onClick={handleClick} onKeyDown={handlePreviewKeyDown} className="group relative cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-4 focus:outline-none focus:ring-2 focus:ring-violet-500" aria-label={`Open ${title}`}>
-        <div className="absolute -right-6 -top-8 size-28 rounded-full bg-violet-200/40 blur-2xl" />
+      {type === "article" && <div role="link" tabIndex={0} onClick={handleClick} onKeyDown={handlePreviewKeyDown} className="group/article relative cursor-pointer overflow-hidden rounded-xl border border-slate-200/60 bg-gradient-to-br from-indigo-50 via-white to-sky-50 p-5 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label={`Open ${title}`}>
+        <div className="absolute -right-6 -top-8 size-32 rounded-full bg-indigo-200/30 blur-2xl" />
         <div className="relative flex items-center gap-2 text-xs font-medium text-slate-500">{website?.favicon ? <img className="size-5 rounded" src={website.favicon} alt="" /> : <ArticleIcon className="size-5" />}<span className="truncate">{website?.hostname}</span></div>
         <p className="relative mt-5 line-clamp-2 text-base font-semibold leading-6 text-slate-800">{title}</p>
         <div className="relative mt-4 space-y-2" aria-hidden="true"><div className="h-2 w-full rounded bg-slate-200/80" /><div className="h-2 w-5/6 rounded bg-slate-200/80" /><div className="h-2 w-2/3 rounded bg-slate-200/80" /></div>
-        <span className="relative mt-5 inline-flex text-xs font-medium text-violet-700 transition group-hover:text-violet-900">Open website -&gt;</span>
+        <span className="relative mt-5 inline-flex text-xs font-medium text-indigo-600 transition group-hover/article:text-indigo-800">Open website -&gt;</span>
       </div>}
-      {type === "audio" && <a href={link} target="_blank" rel="noreferrer" className="block rounded-lg bg-slate-100 p-4 text-sm text-violet-700 hover:bg-violet-50">Open source -&gt;</a>}
+      {type === "audio" && <a href={link} target="_blank" rel="noreferrer" className="block rounded-xl bg-slate-50/80 border border-slate-200/60 p-4 text-sm font-medium text-indigo-700 hover:bg-indigo-50 transition-colors">Open audio source -&gt;</a>}
     </div>
 
-    {tags.length > 0 && <div className="mt-4 flex flex-wrap gap-1.5" aria-label="Tags">{tags.map((tag) => <span key={tag._id} className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700">{tag.title}</span>)}</div>}
+    {summary && (
+      <div className="mt-4 rounded-xl bg-indigo-50/40 border border-indigo-100/50 p-3 shadow-sm">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-700 mb-1.5 uppercase tracking-wide">
+          <SparklesIcon className="size-3 text-indigo-500" />
+          <span>AI Summary</span>
+        </div>
+        <p className="text-xs leading-relaxed text-slate-600">
+          {summary}
+        </p>
+      </div>
+    )}
+
+    {tags.length > 0 && <div className="mt-4 flex flex-wrap gap-1.5" aria-label="Tags">{tags.map((tag) => <span key={tag._id} className="rounded-full bg-white border border-slate-200 shadow-sm px-2.5 py-1 text-xs font-medium text-slate-600">{tag.title}</span>)}</div>}
 
     {confirmDelete && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-labelledby={`delete-title-${contentId}`}>
       <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl">

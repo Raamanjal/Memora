@@ -64,25 +64,25 @@ export async function processContent(contentId: string, userId: string, link: st
 export async function indexContent(contentId: string, userId: string, rawText: string) {
   try {
     const chunks = chunkWithOverlap(rawText, 400, 80);
-    if(chunks.length ===0){
+    if (chunks.length === 0) {
       throw new Error("No chunks generated ");
     }
-     // Makes retries/re-indexing safe: no duplicate vectors.
-     await Embedding.deleteMany({ contentId });
+    // Makes retries/re-indexing safe: no duplicate vectors.
+    await Embedding.deleteMany({ contentId });
 
-     const documents=[];
-            //.entries() returns an array of [index, value] pairs for each element in the chunks array.
+    const documents = [];
+    //.entries() returns an array of [index, value] pairs for each element in the chunks array.
     for (const [chunkIndex, chunkText] of chunks.entries()) {
-     const vector= await generateEmbedding(chunkText);
-    
-     documents.push({
-      contentId,
-      userId,
-      chunkIndex,
-      chunkText,
-      vector
-     });
-    
+      const vector = await generateEmbedding(chunkText);
+
+      documents.push({
+        contentId,
+        userId,
+        chunkIndex,
+        chunkText,
+        vector
+      });
+
     }
 
     await Embedding.insertMany(documents);
@@ -102,32 +102,32 @@ export async function deleteContentEmbeddings(contentId: string) {
 }
 
 
-export async function semanticSearch(query: string, userId: string, topK=5) {
+export async function semanticSearch(query: string, userId: string, topK = 5) {
   const queryVector = await generateEmbedding(query);
   // selects the top K most similar embeddings for the given userId
   const safeTopK = Math.min(Math.max(topK, 1), 20);
 
   return Embedding.aggregate([
     {
-      $vectorSearch:{
-        index:"vector_index",
-        path:"vector",
-        queryVector:queryVector,
+      $vectorSearch: {
+        index: "vector_index",
+        path: "vector",
+        queryVector: queryVector,
         numCandidates: safeTopK * 20,
-        limit:safeTopK,
-        filter:{
+        limit: safeTopK,
+        filter: {
           userId: new Types.ObjectId(userId),
         },
       },
     },
     {
-      $project:{
-        _id:0,
-        contentId:1,
-        chunkText:1,
-        chunkIndex:1,
-        score:{
-          $meta:"vectorSearchScore"
+      $project: {
+        _id: 0,
+        contentId: 1,
+        chunkText: 1,
+        chunkIndex: 1,
+        score: {
+          $meta: "vectorSearchScore"
         },
       },
     },

@@ -185,19 +185,19 @@ ${truncated}`,
 }
 
 
-export async function generateEmbedding(text:string): Promise<number[]> {
+export async function generateEmbedding(text: string): Promise<number[]> {
   const response = await ai.models.embedContent({
     model: EMBEDDING_MODEL,
     contents: text,
     config: {
-    outputDimensionality: 768,
-  },
+      outputDimensionality: 768,
+    },
   })
-   const embedding = response.embeddings?.[0]?.values;
-   if(!embedding || embedding.length !== 768){
+  const embedding = response.embeddings?.[0]?.values;
+  if (!embedding || embedding.length !== 768) {
     throw new Error("Embedding generation failed or returned unexpected length.");
-   }
-   return embedding;
+  }
+  return embedding;
 }
 
 export interface RetrievedChunk {
